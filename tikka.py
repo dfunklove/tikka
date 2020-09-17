@@ -17,21 +17,15 @@ class FinnhubClient:
     async with websockets.connect(uri) as websocket:
       self.websocket = websocket
 
-      #print("subscribing to symbols...")
-      #await websocket.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
-      #await websocket.send('{"type":"subscribe","symbol":"IC MARKETS:1"}')
-      #await self.subscribe("IC MARKETS:1")
-      #print("done")
-
-      while True:
-        update = await websocket.recv()
-        print(f"< {update}")
+      async for message in websocket:
+        message = await websocket.recv()
+        print(f"< {message}")
 
         # get symbol, price from update
-        update = json.loads(update)
-        if (update.get('type', None) == 'trade'):
-          symbol = update['data'][-1]['s']
-          price = update['data'][-1]['p']
+        message = json.loads(message)
+        if (message.get('type', None) == 'trade'):
+          symbol = message['data'][-1]['s']
+          price = message['data'][-1]['p']
           await self.updateOnServer(symbol, price)
 
   async def updateOnServer(self, symbol, price):
@@ -90,7 +84,7 @@ class TikkaServer:
       await subscriber.send(event)
 
   def updatePriceEvent(self, symbol, price):
-    return json.dumps({"s": symbol, "p": price, "v": "0.01", "t": datetime.datetime.utcnow().strftime("%s")})
+    return json.dumps({"data": [{"s": symbol, "p": price, "v": "0.01", "t": datetime.datetime.utcnow().strftime("%s")}], "type": "trade"})
 
 
 async def moreThanOne(*awaitables):
