@@ -1,22 +1,48 @@
+<!DOCTYPE html>
 <html>
-  <script type="text/javascript">
-const socket = new WebSocket('ws://localhost:8765');
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-// Connection opened -> Subscribe
-socket.addEventListener('open', function (event) {
-    socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'AAPL'}))
-    socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'BINANCE:BTCUSDT'}))
-    socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'IC MARKETS:1'}))
-});
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+    <script src="https://playground.abysscorp.org/chartjs/livecharts/dist/Chart.min.js"></script>
+    <script src="js/chart.js"></script>
+    <style>
+      canvas {
+        display: inline-block !important;
+      }
+    </style>
+    <script type="text/javascript">
+      const socket = new WebSocket('ws://localhost:8765');
+      
+      // Connection opened -> Subscribe
+      socket.addEventListener('open', function (event) {
+          //socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'AAPL'}))
+          socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'BINANCE:BTCUSDT'}))
+          //socket.send(JSON.stringify({'type':'subscribe', 'symbol': 'IC MARKETS:1'}))
+      });
+      
+      // Listen for messages
+      socket.addEventListener('message', function (event) {
+          console.log('Message from server ', event.data);
+          let mydata = JSON.parse(event.data)
+          if (mydata['type'] == 'trade') {
+            let symbol = mydata['data'][0]['s']
+            let price = mydata['data'][0]['p']
+            console.log(`symbol: ${symbol}, price: ${price}`)
 
-// Listen for messages
-socket.addEventListener('message', function (event) {
-    console.log('Message from server ', event.data);
-});
-
-// Unsubscribe
-var unsubscribe = function(symbol) {
-    socket.send(JSON.stringify({'type':'unsubscribe','symbol': symbol}))
-}
-  </script>
+            if (symbol == "BINANCE:BTCUSDT") {
+              addValue(price)
+            }
+          }
+      });
+      
+      // Unsubscribe
+      var unsubscribe = function(symbol) {
+          socket.send(JSON.stringify({'type':'unsubscribe','symbol': symbol}))
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="chart0" style="width:70%;height:70%;display:block"></canvas>
+  </body>
 </html>
