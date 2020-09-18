@@ -21,24 +21,22 @@ class FinnhubClient:
       try:
         print("Connecting to FinnHub...")
         async with websockets.connect(FinnhubClient.URI) as websocket:
+          print("Connected.")
           self.websocket = websocket
           self.subscriptions = set()
-          print("Connected.")
-          await listen_forever(websocket, self)
+          async for message in websocket:
+            print(f"< {message}")
+            message = json.loads(message)
+            if (message.get('type', None) == 'trade'):
+              symbol = message['data'][-1]['s']
+              price = message['data'][-1]['p']
+              await self.updateOnServer(symbol, price)
       except (ConnectionRefusedError, websockets.exceptions.WebSocketException) as e:
-          print(f"FinnhubClient: {type(e)}")
-          print(e)
-          traceback.print_tb(e.__traceback__)
-          await asyncio.sleep(5)
-          continue
-
-  async def on_message(self, message, websocket):
-    print(f"< {message}")
-    message = json.loads(message)
-    if (message.get('type', None) == 'trade'):
-      symbol = message['data'][-1]['s']
-      price = message['data'][-1]['p']
-      await self.updateOnServer(symbol, price)
+        print(f"FinnhubClient: {type(e)}")
+        print(e)
+        traceback.print_tb(e.__traceback__)
+        await asyncio.sleep(5)
+        continue
 
   async def updateOnServer(self, symbol, price):
     await self.serverInstance.updatePrice(symbol, price)
@@ -69,26 +67,24 @@ class TikkaServer:
     await self.addSubscriber(websocket)
 
     try:
-      await listen_forever(websocket, self)
+      async for message in websocket:
+        print(f"< {message}")
+
+        # get symbol and command (subscribe/unsubscribe) from message
+        message = json.loads(message)
+        command = message.get('type', None)
+        symbol = message.get('symbol', None)
+
+        # call subscribe/unsubscribe on finnhub client
+        if (command == "subscribe"):
+          await self.subscribe(websocket, symbol)
+        elif (command == "unsubscribe"):
+          pass # TODO
     except websockets.exceptions.WebSocketException as e:
       await self.removeSubscriber(websocket)
       print(f"TikkaServer: {type(e)}")
       print(e)
       raise e
-
-  async def on_message(self, message, websocket):
-    print(f"< {message}")
-
-    # get symbol and command (subscribe/unsubscribe) from message
-    message = json.loads(message)
-    command = message.get('type', None)
-    symbol = message.get('symbol', None)
-
-    # call subscribe/unsubscribe on finnhub client
-    if (command == "subscribe"):
-      await self.subscribe(websocket, symbol)
-    elif (command == "unsubscribe"):
-      pass # TODO
 
   async def addSubscriber(self, websocket):
     self.subscribers[websocket] = set()
@@ -129,23 +125,6 @@ class TikkaServer:
   def updatePriceEvent(self, symbol, price):
     return json.dumps({"data": [{"s": symbol, "p": price, "v": "0.01", "t": datetime.datetime.utcnow().strftime("%s")}], "type": "trade"})
 
-
-async def listen_forever(websocket, handler_obj):
-  while True:
-    try:
-      message = await asyncio.wait_for(websocket.recv(), timeout=60)
-    except asyncio.TimeoutError:
-      try:
-        pong = await websocket.ping()
-        await asyncio.wait_for(pong, timeout=10)
-        print('Ping OK, keeping connection alive...')
-        continue
-      except Exception as e:
-        print(type(e))
-        print(e)
-        traceback.print_tb(e.__traceback__)
-        return
-    await handler_obj.on_message(message, websocket)
 
 async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
