@@ -164,7 +164,7 @@ if __name__ == '__main__':
   tikka_server.setClientInstance(finnhub_client)
 
   client_task = finnhub_client.run()
-  server_task = websockets.serve(tikka_server.run, "localhost", 8765)
+  server_task = websockets.serve(tikka_server.run, "localhost", 5001)
   print("Starting server.")
   asyncio.get_event_loop().set_debug(True)
   asyncio.get_event_loop().run_until_complete(moreThanOne(client_task, server_task))
