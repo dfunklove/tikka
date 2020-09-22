@@ -49,8 +49,19 @@ class FinnhubClient:
       print(f"event: {event}")
       await self.websocket.send(event)
 
+  async def unsubscribe(self, symbol):
+    print(f"FinnhubClient.unsubscribe({symbol})")
+    if symbol in self.subscriptions:
+      self.subscriptions.remove(symbol)
+      event = self.unsubscribeEvent(symbol)
+      print(f"event: {event}")
+      await self.websocket.send(event)
+
   def subscribeEvent(self, symbol):
     return json.dumps({"type":"subscribe", "symbol": symbol})
+
+  def unsubscribeEvent(self, symbol):
+    return json.dumps({"type":"unsubscribe", "symbol": symbol})
 
 
 class TikkaServer:
@@ -79,7 +90,7 @@ class TikkaServer:
         if (command == "subscribe"):
           await self.subscribe(websocket, symbol)
         elif (command == "unsubscribe"):
-          pass # TODO
+          await self.unsubscribe(websocket, symbol)
     except websockets.exceptions.WebSocketException as e:
       await self.removeSubscriber(websocket)
       print(f"TikkaServer: {type(e)}")
@@ -99,16 +110,28 @@ class TikkaServer:
   async def subscribe(self, websocket, symbol):
     print(f"TikkaServer.subscribe({symbol})")
     self.subscribers[websocket].add(symbol)
-    subscribers = self.subscriptions.get(symbol, None)
-    if (not subscribers):
-      subscribers = set()
+    subscribers = self.subscriptions.get(symbol, set())
     subscribers.add(websocket)
     self.subscriptions[symbol] = subscribers
     await self.subscribeOnClient(symbol)
 
+  async def unsubscribe(self, websocket, symbol):
+    print(f"TikkaServer.unsubscribe({symbol})")
+    self.subscribers[websocket].remove(symbol)
+    subscribers = self.subscriptions.get(symbol, None)
+    if (subscribers):
+      subscribers.remove(websocket)
+    await self.unsubscribeOnClient(symbol)
+
   async def subscribeOnClient(self, symbol):
     if (self.clientInstance):
       await self.clientInstance.subscribe(symbol)
+    else:
+      print("tikka server missing reference to FinnHub client")
+
+  async def unsubscribeOnClient(self, symbol):
+    if (self.clientInstance):
+      await self.clientInstance.unsubscribe(symbol)
     else:
       print("tikka server missing reference to FinnHub client")
 
