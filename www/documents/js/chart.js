@@ -2,7 +2,8 @@ var max_samples = 10000;
 var values = [];
 var charts = [];
 
-function initialize() {
+function initializeChart() {
+  charts = []
   charts.push(new Chart(document.getElementById("chart0"), {
     type: 'line',
     data: {
@@ -36,7 +37,7 @@ function initialize() {
   }))
 }
 
-function updateCharts(){
+function updateChart(){
   charts.forEach(function(chart) {
     chart.update();
   });
@@ -59,9 +60,24 @@ function addValueDeferred() {
   });
   if (values.length > max_samples)
     values.shift()
-  updateCharts()
+  updateChart()
+}
+
+function resetChart() {
+  setTimeout(function() {
+    requestAnimationFrame(resetChartDeferred)
+  }, 0)
+}
+
+function resetChartDeferred() {
+  console.log("reset chart")
+  values = []
+  charts.forEach(function(chart) {
+    chart.destroy();
+  });
+  initializeChart()
 }
 
 window.onload = function() {
-  initialize();
+  initializeChart();
 };
