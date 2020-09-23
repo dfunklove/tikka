@@ -41,10 +41,12 @@
       }
 
       function subscribe(symbol) {
+          console.log("subscribe: "+symbol)
           socket.send(JSON.stringify({'type':'subscribe','symbol': symbol}))
       }
 
       function unsubscribe(symbol) {
+          console.log("unsubscribe: "+symbol)
           socket.send(JSON.stringify({'type':'unsubscribe','symbol': symbol}))
       }
 
@@ -67,7 +69,11 @@
       document.getElementById("symbol").addEventListener('change', function(e) {
         if (subscription)
           unsubscribe(subscription)
-        resetChart()
+        try {
+          resetChart()
+        } catch(err) {
+          console.log(err)
+        }
         subscription = e.target.value
         subscribe(e.target.value)
       })
