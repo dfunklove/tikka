@@ -1,9 +1,10 @@
 import asyncio
-import websockets
 import datetime
 import json
 import logging
-import traceback
+import pathlib
+import ssl
+import websockets
 
 class FinnhubClient:
   URI = "wss://ws.finnhub.io?token=bqq9i0nrh5r9ffdhino0"
@@ -164,8 +165,14 @@ if __name__ == '__main__':
   tikka_server.setClientInstance(finnhub_client)
 
   client_task = finnhub_client.run()
-  server_task = websockets.serve(tikka_server.run, "localhost", 5001)
+
+  ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  certfile = pathlib.Path(__file__).with_name("fullchain.pem")
+  keyfile = pathlib.Path(__file__).with_name("privkey.pem")
+  ssl_context.load_cert_chain(certfile, keyfile=keyfile)
+  server_task = websockets.serve(tikka_server.run, "localhost", 5001, ssl=ssl_context)
+
   print("Starting server.")
-  asyncio.get_event_loop().set_debug(True)
+  #asyncio.get_event_loop().set_debug(True)
   asyncio.get_event_loop().run_until_complete(moreThanOne(client_task, server_task))
   asyncio.get_event_loop().run_forever()

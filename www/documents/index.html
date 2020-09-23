@@ -16,7 +16,7 @@
       var socket
     
       function setupWebsocket() {
-        socket = new WebSocket('ws://'+window.location.hostname+'/tikka/app');
+        socket = new WebSocket('wss://'+window.location.hostname+'/tikka/app');
       
         // Connection opened -> Subscribe
         socket.addEventListener('open', function (event) {
