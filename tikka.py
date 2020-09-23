@@ -4,6 +4,7 @@ import json
 import logging
 import pathlib
 import ssl
+import traceback
 import websockets
 
 class FinnhubClient:
