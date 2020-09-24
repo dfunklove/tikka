@@ -4,17 +4,26 @@
     <meta charset="utf-8"
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
-    <script src="https://playground.abysscorp.org/chartjs/livecharts/dist/Chart.min.js"></script>
-    <script src="js/chart.js?v=1"></script>
-    <style>
-      canvas {
-        display: inline-block !important;
-      }
-    </style>
-    <script type="text/javascript">
-      var subscription
+    <link href="lib/autocomplete/autocomplete.min.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+    <script type="text/javascript" src="https://playground.abysscorp.org/chartjs/livecharts/dist/Chart.min.js"></script>
+    <script type="text/javascript" src="lib/autocomplete/autocomplete.min.js"></script>
+    <script type="text/javascript" src="lib/fuse.js"></script>
+    <script type="text/javascript" src="js/chart.js?v=1"></script>
+  </head>
+  <body>
+    <div style="display:block">
+      <label for="symbol">Symbol:</label>
+      <!--input type="text" id="symbol" list="symbol_list"-->
+      <input type="text" id="symbol">
+      <datalist id="symbol_list"></datalist>
+    </div>
+    <canvas id="chart0" style="width:70%;height:70%;display:block"></canvas>
+    <script>
+      var fuse
       var socket
+      var subscription
     
       function setupWebsocket() {
         socket = new WebSocket('wss://'+window.location.hostname+'/tikka/app');
@@ -53,20 +62,27 @@
 
       setupWebsocket()
 
-      // set the contents of div #symbol to the list of exchanges
-      fetch('datalist_options.html')
-        .then(response => response.text())
-        .then(response => { document.getElementById("symbol_list").innerHTML = response })
-    </script>
-  </head>
-  <body>
-    <div style="display:block">
-      <label for="symbol">Symbol:</label>
-      <input type="text" id="symbol" list="symbol_list">
-      <datalist id="symbol_list"></datalist>
-    </div>
-    <canvas id="chart0" style="width:70%;height:70%;display:block"></canvas>
-    <script>
+      fetch('symbol_list.json')
+        .then(response => response.json())
+        .then(response => { 
+          fuse = new Fuse(response, {threshold: "0", ignoreLocation: "true", keys: ["value", "text"]})
+          autocomplete({
+            input: document.getElementById("symbol"),
+            fetch: function(text, update) {
+              var result = fuse.search(text)
+              console.log(result)
+              for (var key in result) {
+                  result[key] = result[key].item;
+                  result[key].label = result[key].text
+                }
+              update(result);
+            },
+            onSelect: function(item) {
+              this.input.value = item.value;
+            }
+          });
+        })
+
       document.getElementById("symbol").addEventListener('change', function(e) {
         if (subscription)
           unsubscribe(subscription)
@@ -78,6 +94,8 @@
         subscription = e.target.value
         subscribe(e.target.value)
       })
-    </script>
+
+      
+</script>
   </body>
 </html>
