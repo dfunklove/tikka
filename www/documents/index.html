@@ -16,7 +16,7 @@
     <div style="display:block">
       <label for="symbol">Symbol:</label>
       <!--input type="text" id="symbol" list="symbol_list"-->
-      <input type="text" id="symbol">
+      <input type="text" id="symbol"> <button id="go">GO</button>
       <datalist id="symbol_list"></datalist>
     </div>
     <canvas id="chart0" style="width:70%;height:70%;display:block"></canvas>
@@ -60,6 +60,18 @@
           socket.send(JSON.stringify({'type':'unsubscribe','symbol': symbol}))
       }
 
+      function updateSubscription(e) {
+        if (subscription)
+          unsubscribe(subscription)
+        try {
+          resetChart()
+        } catch(err) {
+          console.log(err)
+        }
+        subscription = document.getElementById("symbol").value
+        subscribe(subscription)
+      }
+
       setupWebsocket()
 
       fetch('symbol_list.json')
@@ -83,17 +95,7 @@
           });
         })
 
-      document.getElementById("symbol").addEventListener('change', function(e) {
-        if (subscription)
-          unsubscribe(subscription)
-        try {
-          resetChart()
-        } catch(err) {
-          console.log(err)
-        }
-        subscription = e.target.value
-        subscribe(e.target.value)
-      })
+      document.getElementById("go").addEventListener('click', updateSubscription)
 
       
 </script>
