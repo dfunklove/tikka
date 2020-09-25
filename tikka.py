@@ -98,15 +98,18 @@ class TikkaServer:
       print(f"TikkaServer: {type(e)}")
       print(e)
       raise e
+      
+    await self.removeSubscriber(websocket)
 
   async def addSubscriber(self, websocket):
     self.subscribers[websocket] = set()
 
   async def removeSubscriber(self, websocket):
     print("TikkaServer: removeSubscriber")
-    symbols = self.subscribers[websocket]
-    for symbol in symbols:
-      self.subscriptions[symbol].remove(websocket)
+    symbols = self.subscribers.get(websocket, [])
+    while (len(symbols) > 0):
+      symbol = symbols.pop()
+      await self.unsubscribe(websocket, symbol)
     self.subscribers.pop(websocket, None) # remove key
 
   async def subscribe(self, websocket, symbol):
@@ -119,11 +122,12 @@ class TikkaServer:
 
   async def unsubscribe(self, websocket, symbol):
     print(f"TikkaServer.unsubscribe({symbol})")
-    self.subscribers[websocket].remove(symbol)
+    self.subscribers[websocket].discard(symbol)
     subscribers = self.subscriptions.get(symbol, None)
     if (subscribers):
       subscribers.remove(websocket)
-    await self.unsubscribeOnClient(symbol)
+      if (len(subscribers) == 0):
+        await self.unsubscribeOnClient(symbol)
 
   async def subscribeOnClient(self, symbol):
     if (self.clientInstance):
