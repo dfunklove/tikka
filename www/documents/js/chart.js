@@ -1,4 +1,5 @@
-var max_samples = 10000;
+var MAX_SAMPLES = 1000;
+var CHART_REFRESH_RATE = 420;
 var values = [];
 var charts = [];
 
@@ -20,7 +21,7 @@ function initializeChart() {
     options: {
       responsive: true,
       animation: {
-        duration: 420,
+        duration: CHART_REFRESH_RATE,
         easing: 'linear'
       },
       legend: false,
@@ -58,7 +59,7 @@ function addValueDeferred() {
     x: new Date(),
     y: currentPrice
   });
-  if (values.length > max_samples)
+  if (values.length > MAX_SAMPLES)
     values.shift()
   updateChart()
 }
@@ -78,6 +79,6 @@ function resetChartDeferred() {
   initializeChart()
 }
 
-window.onload = function() {
+window.addEventListener("load", function() {
   initializeChart();
-};
+});
