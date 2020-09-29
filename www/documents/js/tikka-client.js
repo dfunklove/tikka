@@ -87,6 +87,7 @@ async function unsubscribe(symbol) {
 }
 
 async function updateSubscription(e) {
+  e.preventDefault()
   if (subscription)
     await unsubscribe(subscription)
   try {
@@ -96,6 +97,7 @@ async function updateSubscription(e) {
   }
   subscription = document.getElementById("symbol").value
   await subscribe(subscription)
+  return false
 }
 
 async function pollForUpdates() {
@@ -129,8 +131,6 @@ window.addEventListener("load", async () => {
         }
       });
     });
-
-  document.getElementById("go").addEventListener('click', updateSubscription);
 
   await setupWebsocket();
 

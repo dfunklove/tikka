@@ -12,14 +12,19 @@
     <script type="text/javascript" src="lib/fuse.js"></script>
     <script type="text/javascript" src="js/chart.js?v=1"></script>
   </head>
-  <body>
-    <div style="display:block">
-      <label for="symbol">Symbol:</label>
-      <!--input type="text" id="symbol" list="symbol_list"-->
-      <input type="text" id="symbol"> <button id="go">GO</button>
-      <datalist id="symbol_list"></datalist>
+  <body width="100%" style="font-family: sans-serif;">
+    <div style="text-align: center;">
+      <div style="display:block">
+        <form onsubmit="updateSubscription(event)" style="display:inline">
+          <label for="symbol">Symbol:</label>
+          <input type="text" id="symbol">
+          <input type="submit" value="GO">
+        </form>
+      </div>
+      <div style="width:100vw;height:90vh">
+        <canvas id="chart0"></canvas>
+      </div>
     </div>
-    <canvas id="chart0" style="width:70%;height:70%;display:block"></canvas>
   </body>
   <script type="text/javascript" src="js/tikka-client.js?v=1"></script>
 </html>
