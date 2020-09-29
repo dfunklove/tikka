@@ -15,10 +15,11 @@
   <body width="100%" style="font-family: sans-serif;">
     <div style="text-align: center;">
       <div style="display:block">
-        <form onsubmit="updateSubscription(event)" style="display:inline">
+        <form onsubmit="updateSubscription(event)" autocomplete="off" style="display:inline">
           <label for="symbol">Symbol:</label>
-          <input type="text" id="symbol">
-          <input type="submit" value="GO">
+          <input type="text" id="symbol_in">
+          <input type="hidden" id="symbol_out">
+          <input type="submit" id="go" value="GO">
         </form>
       </div>
       <div style="width:100vw;height:90vh">

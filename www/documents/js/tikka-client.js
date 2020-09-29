@@ -88,6 +88,12 @@ async function unsubscribe(symbol) {
 
 async function updateSubscription(e) {
   e.preventDefault()
+  let new_subscription = document.getElementById("symbol_out").value
+  if (!new_subscription || new_subscription === subscription) {
+    alert("Instructions:\n1. Enter text.\n2. Select an option from the drop-down.")
+    return false
+  }
+  document.getElementById("go").disabled = true
   if (subscription)
     await unsubscribe(subscription)
   try {
@@ -95,7 +101,7 @@ async function updateSubscription(e) {
   } catch(err) {
     console.log(err)
   }
-  subscription = document.getElementById("symbol").value
+  subscription = new_subscription
   await subscribe(subscription)
   return false
 }
@@ -117,7 +123,7 @@ window.addEventListener("load", async () => {
     .then(response => {
       fuse = new Fuse(response, { threshold: "0", ignoreLocation: "true", keys: ["value", "text"] });
       autocomplete({
-        input: document.getElementById("symbol"),
+        input: document.getElementById("symbol_in"),
         fetch: function (text, update) {
           var result = fuse.search(text);
           for (var key in result) {
@@ -127,7 +133,12 @@ window.addEventListener("load", async () => {
           update(result);
         },
         onSelect: function (item) {
-          this.input.value = item.value;
+          this.input.value = item.text;
+          let output_el = document.getElementById("symbol_out")
+          if (output_el.value != item.value) {
+            output_el.value = item.value;
+            document.getElementById("go").disabled = false
+          }
         }
       });
     });
