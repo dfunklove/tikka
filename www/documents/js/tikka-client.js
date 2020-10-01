@@ -1,6 +1,7 @@
 var fuse
 var socket
 var subscription
+var subscribeTime = 0
 var lastUpdate = 0
 var updates = []
 
@@ -102,7 +103,9 @@ async function updateSubscription(e) {
     console.log(err)
   }
   subscription = new_subscription
+  subscribeTime = Date.now()
   await subscribe(subscription)
+  setTimeout(updateChart, CHART_EMPTY_MSG_TIMEOUT) // Change the empty overlay if needed
   return false
 }
 
