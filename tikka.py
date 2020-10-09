@@ -14,6 +14,7 @@ class FinnhubClient:
     self.serverInstance = setServerInstance
     self.websocket = None
     self.subscriptions = set()
+    self.logger = logging.getLogger('dlove.it.Tikka.FinnhubClient')
 
   def setServerInstance(self, serverInstance):
     self.serverInstance = serverInstance
@@ -21,22 +22,21 @@ class FinnhubClient:
   async def run(self):
     while True:
       try:
-        print("Connecting to FinnHub...")
+        self.logger.info("Connecting to FinnHub...")
         async with websockets.connect(FinnhubClient.URI) as websocket:
-          print("Connected.")
+          self.logger.info("Connected.")
           self.websocket = websocket
           self.subscriptions = set()
           async for message in websocket:
-            print(f"< {message}")
+            self.logger.debug(f"< {message}")
             message = json.loads(message)
             if (message.get('type', None) == 'trade'):
               symbol = message['data'][-1]['s']
               price = message['data'][-1]['p']
               await self.updateOnServer(symbol, price)
       except (ConnectionRefusedError, websockets.exceptions.WebSocketException) as e:
-        print(f"FinnhubClient: {type(e)}")
-        print(e)
-        traceback.print_tb(e.__traceback__)
+        self.logger.error(f"FinnhubClient: {type(e)}")
+        self.logger.exception(e)
         await asyncio.sleep(5)
         continue
 
@@ -44,19 +44,17 @@ class FinnhubClient:
     await self.serverInstance.updatePrice(symbol, price)
 
   async def subscribe(self, symbol):
-    print(f"FinnhubClient.subscribe({symbol})")
+    self.logger.debug(f"FinnhubClient.subscribe({symbol})")
     if symbol not in self.subscriptions:
       self.subscriptions.add(symbol)
       event = self.subscribeEvent(symbol)
-      print(f"event: {event}")
       await self.websocket.send(event)
 
   async def unsubscribe(self, symbol):
-    print(f"FinnhubClient.unsubscribe({symbol})")
+    self.logger.debug(f"FinnhubClient.unsubscribe({symbol})")
     if symbol in self.subscriptions:
       self.subscriptions.remove(symbol)
       event = self.unsubscribeEvent(symbol)
-      print(f"event: {event}")
       await self.websocket.send(event)
 
   def subscribeEvent(self, symbol):
@@ -71,17 +69,18 @@ class TikkaServer:
     self.clientInstance = clientInstance
     self.subscriptions = {}
     self.subscribers = {}
+    self.logger = logging.getLogger('dlove.it.Tikka.TikkaServer')
 
   def setClientInstance(self, clientInstance):
     self.clientInstance = clientInstance
 
   async def run(self, websocket, path):
-    print("Connection established.")
+    self.logger.debug("Connection established.")
     await self.addSubscriber(websocket)
 
     try:
       async for message in websocket:
-        print(f"< {message}")
+        self.logger.debug(f"< {message}")
 
         # get symbol and command (subscribe/unsubscribe) from message
         message = json.loads(message)
@@ -95,8 +94,8 @@ class TikkaServer:
           await self.unsubscribe(websocket, symbol)
     except websockets.exceptions.WebSocketException as e:
       await self.removeSubscriber(websocket)
-      print(f"TikkaServer: {type(e)}")
-      print(e)
+      self.logger.error(f"TikkaServer: {type(e)}")
+      self.logger.exception(e)
       raise e
       
     await self.removeSubscriber(websocket)
@@ -105,7 +104,7 @@ class TikkaServer:
     self.subscribers[websocket] = set()
 
   async def removeSubscriber(self, websocket):
-    print("TikkaServer: removeSubscriber")
+    self.logger.debug("TikkaServer: removeSubscriber")
     symbols = self.subscribers.get(websocket, [])
     while (len(symbols) > 0):
       symbol = symbols.pop()
@@ -113,7 +112,7 @@ class TikkaServer:
     self.subscribers.pop(websocket, None) # remove key
 
   async def subscribe(self, websocket, symbol):
-    print(f"TikkaServer.subscribe({symbol})")
+    self.logger.debug(f"TikkaServer.subscribe({symbol})")
     self.subscribers[websocket].add(symbol)
     subscribers = self.subscriptions.get(symbol, set())
     subscribers.add(websocket)
@@ -121,7 +120,7 @@ class TikkaServer:
     await self.subscribeOnClient(symbol)
 
   async def unsubscribe(self, websocket, symbol):
-    print(f"TikkaServer.unsubscribe({symbol})")
+    self.logger.debug(f"TikkaServer.unsubscribe({symbol})")
     self.subscribers[websocket].discard(symbol)
     subscribers = self.subscriptions.get(symbol, None)
     if (subscribers):
@@ -133,23 +132,22 @@ class TikkaServer:
     if (self.clientInstance):
       await self.clientInstance.subscribe(symbol)
     else:
-      print("tikka server missing reference to FinnHub client")
+      self.logger.error("tikka server missing reference to FinnHub client")
 
   async def unsubscribeOnClient(self, symbol):
     if (self.clientInstance):
       await self.clientInstance.unsubscribe(symbol)
     else:
-      print("tikka server missing reference to FinnHub client")
+      self.logger.error("tikka server missing reference to FinnHub client")
 
   async def updatePrice(self, symbol, price):
-    print(f"TikkaServer.updatePrice({symbol}, {price})")
+    self.logger.debug(f"TikkaServer.updatePrice({symbol}, {price})")
     for subscriber in self.subscriptions.get(symbol, []):
       event = self.updatePriceEvent(symbol, price)
-      print(f"event: {event}")
       try:
         await subscriber.send(event)
       except websockets.exceptions.ConnectionClosed:
-        print("tried to update a closed connection!")
+        self.logger.warning("tried to update a closed connection!")
 
   def updatePriceEvent(self, symbol, price):
     return json.dumps({"data": [{"s": symbol, "p": price, "v": "0.01", "t": datetime.datetime.utcnow().strftime("%s")}], "type": "trade"})
@@ -159,8 +157,8 @@ async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.DEBUG)
-  logger = logging.getLogger('websockets.server')
+  logging.basicConfig(filename='tikka.log', level=logging.DEBUG)
+  logger = logging.getLogger('websockets')
   logger.setLevel(logging.ERROR)
   logger.addHandler(logging.StreamHandler())
 
@@ -177,7 +175,8 @@ if __name__ == '__main__':
   ssl_context.load_cert_chain(certfile, keyfile=keyfile)
   server_task = websockets.serve(tikka_server.run, "localhost", 5001, ssl=ssl_context)
 
-  print("Starting server.")
+  logger = logging.getLogger('dlove.it.Tikka')
+  logger.info("Starting server.")
   #asyncio.get_event_loop().set_debug(True)
   asyncio.get_event_loop().run_until_complete(moreThanOne(client_task, server_task))
   asyncio.get_event_loop().run_forever()
