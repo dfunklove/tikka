@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8"
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+---
+layout: default
+title: Stock Chart
+---
     <link href="lib/autocomplete/autocomplete.min.css" rel="stylesheet" type="text/css" />
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
@@ -12,21 +10,19 @@
     <script type="text/javascript" src="lib/autocomplete/autocomplete.min.js"></script>
     <script type="text/javascript" src="lib/fuse.js"></script>
     <script type="text/javascript" src="js/chart.js?v=1"></script>
-  </head>
-  <body width="100%" style="font-family: sans-serif;">
+
     <div style="text-align: center;">
       <div style="display:block">
         <form onsubmit="updateSubscription(event)" autocomplete="off" style="display:inline">
-          <label for="symbol">Symbol:</label>
+          <label for="symbol">Symbol</label>
           <input type="text" id="symbol_in">
           <input type="hidden" id="symbol_out">
-          <input type="submit" id="go" value="GO">
+          <input type="submit" id="go" value="GO" style="margin-bottom:1rem">
         </form>
       </div>
-      <div style="width:100vw;height:90vh">
+      <div style="width:100%;height:90%">
         <canvas id="chart0"></canvas>
       </div>
     </div>
-  </body>
-  <script type="text/javascript" src="js/tikka-client.js?v=1"></script>
-</html>
+
+    <script type="text/javascript" src="js/tikka-client.js?v=1"></script>
