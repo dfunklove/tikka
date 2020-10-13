@@ -157,7 +157,7 @@ async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
 
 if __name__ == '__main__':
-  logging.basicConfig(filename='tikka.log', level=logging.DEBUG)
+  logging.basicConfig(filename='tikka.log', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
   logger = logging.getLogger('websockets')
   logger.setLevel(logging.ERROR)
   logger.addHandler(logging.StreamHandler())
