@@ -13,18 +13,29 @@ hide_sidebar: true
     <script type="text/javascript" src="lib/fuse.js"></script>
     <script type="text/javascript" src="js/chart.js?v=1"></script>
 
-    <div style="text-align: center;">
-      <div style="display:block">
-        <form onsubmit="updateSubscription(event)" autocomplete="off" style="display:inline">
-          <label for="symbol">Symbol</label>
-          <input type="text" id="symbol_in">
-          <input type="hidden" id="symbol_out">
-          <input type="submit" id="go" value="GO" style="margin-top:1rem;margin-bottom:2rem">
-        </form>
-      </div>
+    <div class="center-flex">
+      <form onsubmit="updateSubscription(event)" autocomplete="off" class="center-contents">
+        <label for="symbol">Symbol</label>
+        <input type="text" id="symbol_in">
+        <input type="hidden" id="symbol_out">
+        <input type="submit" id="go" value="GO" style="margin-top:1rem;margin-bottom:2rem">
+      </form>
       <div style="width:100%;height:90%">
         <canvas id="chart0"></canvas>
       </div>
     </div>
 
     <script type="text/javascript" src="js/tikka-client.js?v=1"></script>
+
+<style>
+.center-contents {
+  text-align: center;
+}
+
+.center-flex {
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+</style>
