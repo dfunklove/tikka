@@ -7,6 +7,8 @@ import ssl
 import traceback
 import websockets
 
+MAX_SYMBOLS = 50 # Hard limit imposed by FinnHub
+
 class FinnhubClient:
   URI = "wss://ws.finnhub.io?token=bqq9i0nrh5r9ffdhino0"
 
@@ -113,6 +115,12 @@ class TikkaServer:
 
   async def subscribe(self, websocket, symbol):
     self.logger.debug(f"TikkaServer.subscribe({symbol})")
+    self.logger.debug(f"len(subscriptions) == {len(self.subscriptions)}")
+    if (len(self.subscriptions) >= MAX_SYMBOLS):
+      self.logger.debug("MAX_SYMBOLS reached!")
+      await websocket.send(self.maxSymbolsEvent())
+      return
+    
     self.subscribers[websocket].add(symbol)
     subscribers = self.subscriptions.get(symbol, set())
     subscribers.add(websocket)
@@ -142,8 +150,8 @@ class TikkaServer:
 
   async def updatePrice(self, symbol, price):
     self.logger.debug(f"TikkaServer.updatePrice({symbol}, {price})")
+    event = self.updatePriceEvent(symbol, price)
     for subscriber in self.subscriptions.get(symbol, []):
-      event = self.updatePriceEvent(symbol, price)
       try:
         await subscriber.send(event)
       except websockets.exceptions.ConnectionClosed:
@@ -152,6 +160,8 @@ class TikkaServer:
   def updatePriceEvent(self, symbol, price):
     return json.dumps({"data": [{"s": symbol, "p": price, "v": "0.01", "t": datetime.datetime.utcnow().strftime("%s")}], "type": "trade"})
 
+  def maxSymbolsEvent(self):
+    return json.dumps({"data": "The system is at maximum capacity.  Please try again later.", "type": "error"})
 
 async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
