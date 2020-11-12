@@ -34,6 +34,8 @@ async function setupWebsocket() {
         d = new Date()
         t = d.getTime()
         updates.push(price)
+      } else if (mydata['type'] == 'error') {
+        document.querySelector('.message-area').innerText = mydata['data']
       }
     });
 
