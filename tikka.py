@@ -10,6 +10,12 @@ import websockets
 MAX_SYMBOLS = 50 # Hard limit imposed by FinnHub
 
 class FinnhubClient:
+  """
+  Maintains a websocket connection with the FinnHub data source.
+  Keeps track of subscriptions to avoid sending duplicate subscription requests 
+  in the case where more than one client subscribes to the same symbol.
+  Has a reference to the server for passing price updates.
+  """
   URI = "wss://ws.finnhub.io?token=bqq9i0nrh5r9ffdhino0"
 
   def __init__(self, setServerInstance=None):
@@ -67,6 +73,14 @@ class FinnhubClient:
 
 
 class TikkaServer:
+  """
+  Handles connections and subscribe/unsubscribe requests from web clients.
+  Sends price updates to subscribers over their respective websockets.
+  Maintains a dict of subscribers:   a map of websocket -> symbol.
+        And a dict of subscriptions: a map of symbol -> websocket.
+  Clients are removed from both lists when they disconnect.
+  Has a reference to FinnhubClient for passing subscribe/unsubscribe requests.
+  """
   def __init__(self, clientInstance=None):
     self.clientInstance = clientInstance
     self.subscriptions = {}
@@ -163,10 +177,16 @@ class TikkaServer:
   def maxSymbolsEvent(self):
     return json.dumps({"data": "The system is at maximum capacity.  Please try again later.", "type": "error"})
 
+
 async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
 
+
 if __name__ == '__main__':
+  """
+  Run client and server on a single asyncio event loop.
+  This way they both live in the same process, and can pass messages via method calls.
+  """
   logging.basicConfig(filename='tikka.log', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
   logger = logging.getLogger('websockets')
   logger.setLevel(logging.ERROR)
