@@ -4,8 +4,10 @@ import json
 import logging
 import pathlib
 import ssl
+import sys
 import traceback
 import websockets
+from os import path
 
 MAX_SYMBOLS = 50 # Hard limit imposed by FinnHub
 
@@ -182,11 +184,12 @@ async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
 
 
-if __name__ == '__main__':
+def main(certfile, keyfile, port):
   """
   Run client and server on a single asyncio event loop.
   This way they both live in the same process, and can pass messages via method calls.
   """
+
   logging.basicConfig(filename='tikka.log', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
   logger = logging.getLogger('websockets')
   logger.setLevel(logging.ERROR)
@@ -198,12 +201,14 @@ if __name__ == '__main__':
   tikka_server.setClientInstance(finnhub_client)
 
   client_task = finnhub_client.run()
+  server_task = None
 
-  ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-  certfile = pathlib.Path(__file__).with_name("fullchain.pem")
-  keyfile = pathlib.Path(__file__).with_name("privkey.pem")
-  ssl_context.load_cert_chain(certfile, keyfile=keyfile)
-  server_task = websockets.serve(tikka_server.run, "localhost", 5001, ssl=ssl_context)
+  if (certfile and keyfile):
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(certfile, keyfile=keyfile)
+    server_task = websockets.serve(tikka_server.run, "localhost", port, ssl=ssl_context)
+  else:
+    server_task = websockets.serve(tikka_server.run, "localhost", port)
 
   logger = logging.getLogger('dlove.it.Tikka')
   logger.info("Starting server.")
