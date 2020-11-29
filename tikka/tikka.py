@@ -6,6 +6,7 @@ import pathlib
 import ssl
 import sys
 import traceback
+import urllib
 import websockets
 from os import path
 
@@ -18,22 +19,22 @@ class FinnhubClient:
   in the case where more than one client subscribes to the same symbol.
   Has a reference to the server for passing price updates.
   """
-  URI = "wss://ws.finnhub.io?token=bqq9i0nrh5r9ffdhino0"
 
-  def __init__(self, setServerInstance=None):
-    self.serverInstance = setServerInstance
+  def __init__(self, server_instance=None, api_key=None):
+    self.server_instance = server_instance
     self.websocket = None
     self.subscriptions = set()
     self.logger = logging.getLogger('dlove.it.Tikka.FinnhubClient')
+    self.URI = f"wss://ws.finnhub.io?token={urllib.parse.quote(api_key)}"
 
-  def setServerInstance(self, serverInstance):
-    self.serverInstance = serverInstance
+  def setServerInstance(self, server_instance):
+    self.server_instance = server_instance
 
   async def run(self):
     while True:
       try:
         self.logger.info("Connecting to FinnHub...")
-        async with websockets.connect(FinnhubClient.URI) as websocket:
+        async with websockets.connect(self.URI) as websocket:
           self.logger.info("Connected.")
           self.websocket = websocket
           self.subscriptions = set()
@@ -51,7 +52,7 @@ class FinnhubClient:
         continue
 
   async def updateOnServer(self, symbol, price):
-    await self.serverInstance.updatePrice(symbol, price)
+    await self.server_instance.updatePrice(symbol, price)
 
   async def subscribe(self, symbol):
     self.logger.debug(f"FinnhubClient.subscribe({symbol})")
@@ -83,14 +84,14 @@ class TikkaServer:
   Clients are removed from both lists when they disconnect.
   Has a reference to FinnhubClient for passing subscribe/unsubscribe requests.
   """
-  def __init__(self, clientInstance=None):
-    self.clientInstance = clientInstance
+  def __init__(self, client_instance=None):
+    self.client_instance = client_instance
     self.subscriptions = {}
     self.subscribers = {}
     self.logger = logging.getLogger('dlove.it.Tikka.TikkaServer')
 
-  def setClientInstance(self, clientInstance):
-    self.clientInstance = clientInstance
+  def setClientInstance(self, client_instance):
+    self.client_instance = client_instance
 
   async def run(self, websocket, path):
     self.logger.debug("Connection established.")
@@ -153,14 +154,14 @@ class TikkaServer:
         await self.unsubscribeOnClient(symbol)
 
   async def subscribeOnClient(self, symbol):
-    if (self.clientInstance):
-      await self.clientInstance.subscribe(symbol)
+    if (self.client_instance):
+      await self.client_instance.subscribe(symbol)
     else:
       self.logger.error("tikka server missing reference to FinnHub client")
 
   async def unsubscribeOnClient(self, symbol):
-    if (self.clientInstance):
-      await self.clientInstance.unsubscribe(symbol)
+    if (self.client_instance):
+      await self.client_instance.unsubscribe(symbol)
     else:
       self.logger.error("tikka server missing reference to FinnHub client")
 
@@ -184,7 +185,7 @@ async def moreThanOne(*awaitables):
   await asyncio.gather(*awaitables)
 
 
-def main(certfile, keyfile, port):
+def main(api_key, certfile, keyfile, port):
   """
   Run client and server on a single asyncio event loop.
   This way they both live in the same process, and can pass messages via method calls.
@@ -195,7 +196,7 @@ def main(certfile, keyfile, port):
   logger.setLevel(logging.ERROR)
   logger.addHandler(logging.StreamHandler())
 
-  finnhub_client = FinnhubClient()
+  finnhub_client = FinnhubClient(api_key=api_key)
   tikka_server = TikkaServer()
   finnhub_client.setServerInstance(tikka_server)
   tikka_server.setClientInstance(finnhub_client)
