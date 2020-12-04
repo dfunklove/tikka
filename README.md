@@ -45,7 +45,7 @@ The project includes a sample Nginx configuration file in the nginx_conf folder.
 - If you are setting up Nginx from scratch, you can use the sample file as your default configuration.  Fill in your domain and the locations of your certificate and key files, and copy the file to the conf.d folder in your Nginx installation.
 
 ## Running the Application
-Open the web client in your web browser.  The location will depend on where you stored the files under the document root.  If you stored them in a folder called 'tikka', you would navigate to 'https://<server>/tikka'
+Open the web client in your web browser.  The location will depend on where you stored the files under the document root.  If you stored them in a folder called 'tikka', you would navigate to 'https://YOUR-DOMAIN/tikka'
 
 Start typing and the autocomplete should provide a list of financial symbols that match.  Select one and click 'GO'.  The graph will say "Waiting for data."  It may take a few seconds for the graph to populate.  This is because at least two data points are required to make a graph.  If you are using the app outside of trading hours, there may not be any price updates to show.  Eventually the graph will time out and say "No data available."
 
