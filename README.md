@@ -28,6 +28,14 @@ tikka_server.py
 ```
 > Note: Because it provides a secure connection, the app will need access to the certificate and private key files on your web server.  This may require changing permissions on those files.
 
+### API Key
+The server app requires a FinnHub API key in order to run.  This can be given via the command line argument '-a' or a file.  The file must be named 'config.ini' and use the format shown below.
+```
+[DEFAULT]
+API_KEY = X
+```
+The file must be stored in the folder where the Tikka Python package was installed.  For the location of this folder, type 'pip show tikka'.  This gives the location where all Python packages are stored.  You must add '/tikka' to the end to get the location of the tikka package itself.  This is where you would place the file.
+
 ### Websocket Proxy
 Because this project uses websockets, you must setup a websocket proxy on your http server.  Each server does this differently.  I use Nginx and have provided instructions below.
 
@@ -43,4 +51,18 @@ Start typing and the autocomplete should provide a list of financial symbols tha
 
 If the app does not behave as expected, the web console should provide some clues as to what is going on.  If you're not using Nginx as your server, the websocket proxy is a good place to start looking for errors.
 
-If you've got questions or feedback, I'd love to hear from you!  Open an issue and I'll respond as soon as I can.  Happy trading!
+## Updating the List of Symbols
+The list of symbols is stored in the file symbol_list.json in the www folder.  The autocomplete function of the web page reads from this file to give suggestions.  If you wish to update the list, follow the steps below.
+
+1. Download three lists from FinnHub: Stock Company Symbols, Forex Symbols, and Crypto Symbols.   Links can be found the the FinnHub API documentation.
+2. Remove the '[' and ']' characters from the beginning and end of each file.
+3. Concactenate the three files into one big file.
+4. Add one '[' at the beginning and one ']' at the end to make a single JSON array.
+5. Copy the file to the environment where you installed the server app, anywhere you are able to run tikka_server.py.
+6. Run this command:
+    transform.py [input_file] > symbol_list.json
+7. Copy symbol_list.json to the folder where you stored the tikka web app.  Look for the old symbol_list.json and replace it with the new file.
+
+That's it!  Your symbol list is now up to date.
+
+I've tried to cover all of the basic information needed to run the app.  If you've got questions or feedback, I'd love to hear from you!  Open an issue and I'll respond as soon as I can.  Happy trading!
