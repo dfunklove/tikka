@@ -45,7 +45,7 @@ class FinnhubClient:
               symbol = message['data'][-1]['s']
               price = message['data'][-1]['p']
               await self.updateOnServer(symbol, price)
-      except (ConnectionRefusedError, websockets.exceptions.WebSocketException) as e:
+      except Exception as e:
         self.logger.error(f"FinnhubClient: {type(e)}")
         self.logger.exception(e)
         await asyncio.sleep(5)
