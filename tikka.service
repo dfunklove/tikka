@@ -6,9 +6,9 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=3
-User=dfunk
-ExecStart=/bin/bash -c 'source /home/dfunk/.virtualenvs/tikka/bin/activate && /home/dfunk/Development/python/tikka/startup.sh'
-WorkingDirectory=/home/dfunk/Development/python/tikka
+User=python
+ExecStart=python3 /home/python/.local/bin/tikka_server.py -c fullchain.pem -k privkey.pem
+WorkingDirectory=/home/python/tikka
 
 [Install]
 WantedBy=multi-user.target
