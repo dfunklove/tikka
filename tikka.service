@@ -1,0 +1,14 @@
+[Unit]
+Description=tikka stock ticker flask instance
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=dfunk
+ExecStart=/bin/bash -c 'source /home/dfunk/.virtualenvs/tikka/bin/activate && /home/dfunk/Development/python/tikka/startup.sh'
+WorkingDirectory=/home/dfunk/Development/python/tikka
+
+[Install]
+WantedBy=multi-user.target
